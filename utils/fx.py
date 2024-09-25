@@ -28,15 +28,24 @@ def get_fx_rates(base_currency="USD", date=None):
     else:
         url = base_url + f"/historical/{date}.json?app_id={api_key}"
     rates = fetchData(url)['rates']
+
+    if base_currency != "USD" and base_currency in rates:
+            base_rate = rates[base_currency]
+            rates = {currency: rate / base_rate for currency, rate in rates.items()}
+            rates[base_currency] = 1.0  # Set the base currency rate to 1
+
     rates_df = pl.DataFrame({"Currency": list(rates.keys()), "Rate": list(rates.values())})
     return rates_df
 
-def get_currencies():
+def get_currencies_list():
+    url = base_url + '/currencies.json'
+    currencies = fetchData(url)
+    return list(currencies.keys())
+
+def get_currencies_fx():
     url = base_url + '/currencies.json'
     currencies = fetchData(url)
     rates_df = get_fx_rates()
-    normalized_rates = scaler.fit_transform(rates_df['Rate'].to_numpy().reshape(-1, 1)).flatten()
-    print(normalized_rates)
     rates_df = rates_df.with_columns(
         pl.col("Currency").map_elements(lambda x: currencies.get(x, "N/A"), return_dtype=pl.String).alias("Description")
     )

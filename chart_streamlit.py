@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 from streamlit_option_menu import option_menu
 from utils import fx
+import datetime
+from components import fx_rate, currencies
 
 
 def load_data(file_path):
@@ -21,7 +23,7 @@ def resample_data(df, currency_col, frequency):
 # Top Navigation Bar
 selected = option_menu(
     menu_title=None,  # No title for the menu
-    options=["Exchange Rate Dashboard", "Custom Currency Basket", "Currencies"],  # Menu options
+    options=["Exchange Rate Dashboard", "Custom Currency Basket", "Currencies", "FX Rate"],  # Menu options
     icons=["graph-up-arrow", "basket"],  # Icons for each menu option
     default_index=0,  # Which option is selected by default
     orientation="horizontal",  # Horizontal menu
@@ -30,8 +32,8 @@ selected = option_menu(
 if selected == "Exchange Rate Dashboard":
     st.title("Currency Exchange Rate Dashboard")
 
-    currencies = exchange_rate_data.columns[1:]  # Skip 'Date' column
-    currency_selected = st.selectbox("Select a Currency:", currencies)
+    currencies_list = exchange_rate_data.columns[1:]  # Skip 'Date' column
+    currency_selected = st.selectbox("Select a Currency:", currencies_list)
 
     start_date = st.date_input("Start Date", value=exchange_rate_data['Date'].min().date())
     end_date = st.date_input("End Date", value=exchange_rate_data['Date'].max().date())
@@ -80,19 +82,7 @@ elif selected == "Custom Currency Basket":
                 st.write(f"- {currency}: {weight}%")
 
 elif selected == "Currencies":
-    rates = fx.get_currencies()
-    st.dataframe(rates, use_container_width=True)
+    currencies.show_currencies()
 
-    fig = px.bar(rates, x='Rate', y='Currency', title='Currency Exchange Rates', labels={'Rate': 'Exchange Rate'}, height=800)
-    
-    # Set initial zoom range and enable panning and zooming
-    fig.update_layout(
-        yaxis=dict(
-            range=[0, 10],  # Adjust this range to your desired initial zoom
-            autorange=False
-        ),
-        dragmode='pan'  # Enable panning
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-
+elif selected == "FX Rate":
+    fx_rate.show_fx_rate()
