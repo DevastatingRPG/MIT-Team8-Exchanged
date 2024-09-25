@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from streamlit_option_menu import option_menu
-
+from utils import fx
 
 
 def load_data(file_path):
@@ -21,7 +21,7 @@ def resample_data(df, currency_col, frequency):
 # Top Navigation Bar
 selected = option_menu(
     menu_title=None,  # No title for the menu
-    options=["Exchange Rate Dashboard", "Custom Currency Basket"],  # Menu options
+    options=["Exchange Rate Dashboard", "Custom Currency Basket", "Currencies"],  # Menu options
     icons=["graph-up-arrow", "basket"],  # Icons for each menu option
     default_index=0,  # Which option is selected by default
     orientation="horizontal",  # Horizontal menu
@@ -78,3 +78,11 @@ elif selected == "Custom Currency Basket":
             st.write("Your custom basket is:")
             for currency, weight in basket_weights.items():
                 st.write(f"- {currency}: {weight}%")
+
+elif selected == "Currencies":
+    rates = fx.get_currencies()
+    st.dataframe(rates, use_container_width=True)
+
+    fig = px.bar(rates, x='Currency', y='Rate', title='Currency Exchange Rates', labels={'Rate': 'Exchange Rate'})
+    st.plotly_chart(fig, use_container_width=True)
+    pass
