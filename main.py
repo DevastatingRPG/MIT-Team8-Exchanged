@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 from streamlit_option_menu import option_menu
+from components import fx_rate, currencies_page
 from pymongo import MongoClient
 
 def render_footer():
@@ -106,7 +107,7 @@ exchange_rate_data = modify_data(df)
 
 selected = option_menu(
     menu_title=None,
-    options=["Exchange Rate Dashboard", "Custom Currency Basket", "Risk Factor"],
+    options=["Exchange Rate Dashboard", "Custom Currency Basket", "Risk Factor", "Currencies Lister", "FX Rate Monitor"],
     icons=["graph-up-arrow", "basket", "graph-down"],
     default_index=0,
     orientation="horizontal",
@@ -248,6 +249,13 @@ elif selected == "Risk Factor":
             )
 
             st.plotly_chart(fig)
+
+
+elif selected == "Currencies":
+    currencies_page.show_currencies()
+
+elif selected == "FX Rate":
+    fx_rate.show_fx_rate()
 
 
 render_footer()
