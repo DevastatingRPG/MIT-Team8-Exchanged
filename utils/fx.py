@@ -3,14 +3,14 @@ from dotenv import load_dotenv
 import os
 import requests
 from datetime import datetime
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 load_dotenv()
 
 api_key = os.getenv('API_KEY')
 base_url = f'https://openexchangerates.org/api'
-scaler = StandardScaler()
+scaler = MinMaxScaler(feature_range=(0, 1))
 
 def fetchData(url):
     headers = {"accept": "application/json"}
@@ -36,17 +36,10 @@ def get_currencies():
     currencies = fetchData(url)
     rates_df = get_fx_rates()
     normalized_rates = scaler.fit_transform(rates_df['Rate'].to_numpy().reshape(-1, 1)).flatten()
-
+    print(normalized_rates)
     rates_df = rates_df.with_columns(
-        [pl.col("Currency").map_elements(lambda x: currencies.get(x, "N/A"), return_dtype=pl.String).alias("Description"),
-        pl.Series("Normalized_Rate", normalized_rates) ]
+        pl.col("Currency").map_elements(lambda x: currencies.get(x, "N/A"), return_dtype=pl.String).alias("Description")
     )
     rates_df = rates_df.select(["Currency", "Description", "Rate"])
-    # rates_df = rates_
-    # rates_df = rates_df.with_columns(
-    #     pl.col("Rate").map_elements(lambda x: scaler.fit_transform(x.reshape(-1, 1)).flatten(), return_dtype=pl.Float64).alias("Normalized_Rate")
-    # )
-
-    scaler.fit([rates_df['Rate']])
     
     return rates_df

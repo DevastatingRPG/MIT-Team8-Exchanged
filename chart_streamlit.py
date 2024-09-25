@@ -83,6 +83,16 @@ elif selected == "Currencies":
     rates = fx.get_currencies()
     st.dataframe(rates, use_container_width=True)
 
-    fig = px.bar(rates, x='Currency', y='Rate', title='Currency Exchange Rates', labels={'Rate': 'Exchange Rate'})
+    fig = px.bar(rates, x='Rate', y='Currency', title='Currency Exchange Rates', labels={'Rate': 'Exchange Rate'}, height=800)
+    
+    # Set initial zoom range and enable panning and zooming
+    fig.update_layout(
+        yaxis=dict(
+            range=[0, 10],  # Adjust this range to your desired initial zoom
+            autorange=False
+        ),
+        dragmode='pan'  # Enable panning
+    )
+    
     st.plotly_chart(fig, use_container_width=True)
-    pass
+
