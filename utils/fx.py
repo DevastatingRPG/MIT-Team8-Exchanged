@@ -5,6 +5,10 @@ import os
 import requests
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+import json
+import os
+
+currencies_file_path = 'currencies.json'
 
 
 load_dotenv()
@@ -12,6 +16,33 @@ load_dotenv()
 api_key = os.getenv('API_KEY')
 base_url = f'https://openexchangerates.org/api'
 scaler = MinMaxScaler(feature_range=(0, 1))
+
+def save_currencies_to_file(currencies, file_path=currencies_file_path):
+    """
+    Saves the currencies dictionary to a JSON file.
+
+    Parameters:
+    currencies (dict): The dictionary containing currency codes and descriptions.
+    file_path (str): The path to the JSON file where the dictionary will be saved.
+    """
+    with open(file_path, 'w') as file:
+        json.dump(currencies, file)
+
+def load_currencies_from_file(file_path=currencies_file_path):
+    """
+    Loads the currencies dictionary from a JSON file.
+
+    Parameters:
+    file_path (str): The path to the JSON file from which the dictionary will be loaded.
+
+    Returns:
+    dict: The dictionary containing currency codes and descriptions.
+    """
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    else:
+        return {}
 
 def fetchData(url):
     headers = {"accept": "application/json"}
@@ -47,6 +78,9 @@ def get_currencies_fx():
     url = base_url + '/currencies.json'
     currencies = fetchData(url)
     rates_df, _ = get_fx_rates()
+
+    save_currencies_to_file(currencies)
+
     
     # Add the Description column by mapping the Currency column to the currencies dictionary
     rates_df['Description'] = rates_df['Currency'].map(currencies).fillna('N/A')
@@ -55,6 +89,12 @@ def get_currencies_fx():
     rates_df = rates_df[['Currency', 'Description', 'Rate']]
     
     return rates_df
+
+def get_currency_description(code):
+
+    currencies = load_currencies_from_file()
+    return currencies.get(code, 'Description not found')
+
 
 def update_df_with_latest_fx(df: pd.DataFrame) -> pl.DataFrame:
     """

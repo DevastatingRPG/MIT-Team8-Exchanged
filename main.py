@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 import os
 import requests
 
+st.set_page_config(layout="wide")
+
 username = 'root'
 password = 'beansbestcat'
 host = 'localhost'
@@ -91,13 +93,84 @@ selected = option_menu(
 )
 
 
+# if selected == "Exchange Rate Dashboard":
+#     st.title("Currency Exchange Rate Dashboard")
+
+#     currencies = exchange_rate_data.columns[1:] 
+#     currency_1 = st.selectbox("Select a Currency(to compare):", currencies)
+#     currency_2 = st.selectbox("Select Base Currency:", currencies)
+
+
+#     start_date = st.date_input("Start Date", value=exchange_rate_data['Date'].min().date())
+#     end_date = st.date_input("End Date", value=exchange_rate_data['Date'].max().date())
+#     filtered_data = exchange_rate_data[(exchange_rate_data['Date'] >= pd.to_datetime(start_date)) & 
+#                                        (exchange_rate_data['Date'] <= pd.to_datetime(end_date))]
+
+#     frequency_options = {'Weekly': 'W', 'Monthly': 'M', 'Quarterly': 'Q', 'Yearly': 'Y'}
+#     frequency_selected = st.selectbox("Select Chart Frequency:", list(frequency_options.keys()))
+
+    
+#     resampled_data = filtered_data.resample(frequency_options[frequency_selected], on='Date').mean()
+
+    
+#     resampled_data = resampled_data.reset_index()
+
+#     resampled_data['Currency 1 / Currency 2'] = resampled_data[currency_1] / resampled_data[currency_2]
+
+#     fig = px.line(
+#         resampled_data, x='Date', y='Currency 1 / Currency 2',
+#         title=f'{currency_1} <br >                  vs <br>{currency_2} <br>Exchange Rate Trend', markers=True
+#     )
+
+#     fig.update_layout(
+#         xaxis_title='Date',
+#         yaxis_title=f'{currency_1} <br>in terms of {currency_2}',
+#         title_x=0.5,  # Center title horizontally
+#         title_y=0.9,  # Adjust vertical title position (optional)
+#         title_font=dict(size=18),  # Adjust the title font size
+#         showlegend=True,
+#         xaxis=dict(showgrid=True),  # Show gridlines on x-axis
+#         yaxis=dict(showgrid=True),  # Show gridlines on y-axis
+#         hovermode='x unified',  # Unified hover effect
+#     )
+
+#     # annotations for highest and lowest rates
+#     if not resampled_data.empty:
+#         exchange_rate_series = resampled_data[currency_1] / resampled_data[currency_2]
+#         exchange_rate_series = exchange_rate_series.replace([float('inf'), -float('inf')], float('nan')).dropna()
+
+#         highest_rate = exchange_rate_series.max()
+#         # print(highest_rate)
+#         # print(resampled_data)
+#         highest_rate_date = resampled_data[(resampled_data[currency_1] / resampled_data[currency_2]) == highest_rate]['Date'].iloc[0]
+#         fig.add_annotation(x=highest_rate_date, y=highest_rate,
+#                            text=f"Highest: {highest_rate}",
+#                            showarrow=True, arrowhead=2, ax=0, ay=-40, font=dict(color='green'))
+
+#         lowest_rate = (resampled_data[currency_1] / resampled_data[currency_2]).min()
+#         lowest_rate_date = resampled_data[(resampled_data[currency_1] / resampled_data[currency_2]) == lowest_rate]['Date'].iloc[0]
+#         fig.add_annotation(x=lowest_rate_date, y=lowest_rate,
+#                            text=f"Lowest: {lowest_rate}",
+#                            showarrow=True, arrowhead=2, ax=0, ay=40, font=dict(color='red'))
+
+#     st.plotly_chart(fig)
+
+#     if not resampled_data.empty:
+#         st.write(f"**Highest Rate**: {highest_rate} on {highest_rate_date.date()}")
+#         st.write(f"**Lowest Rate**: {lowest_rate} on {lowest_rate_date.date()}")
+
+#     null_count_currency_1 = (exchange_rate_data[currency_1] == 0).sum()
+#     if null_count_currency_1 != 0:
+#         st.warning(f"Note : There are {null_count_currency_1} null values for {currency_1} which are not printed on the graph")
+
 if selected == "Exchange Rate Dashboard":
     st.title("Currency Exchange Rate Dashboard")
 
     currencies = exchange_rate_data.columns[1:] 
     currency_1 = st.selectbox("Select a Currency(to compare):", currencies)
+    st.write("Target Currency: ", fx.get_currency_description(currency_1))
     currency_2 = st.selectbox("Select Base Currency:", currencies)
-
+    st.write("Base Currency: ", fx.get_currency_description(currency_2))
 
     start_date = st.date_input("Start Date", value=exchange_rate_data['Date'].min().date())
     end_date = st.date_input("End Date", value=exchange_rate_data['Date'].max().date())
@@ -117,7 +190,7 @@ if selected == "Exchange Rate Dashboard":
 
     fig = px.line(
         resampled_data, x='Date', y='Currency 1 / Currency 2',
-        title=f'{currency_1} <br >                  vs <br>{currency_2} <br>Exchange Rate Trend', markers=True
+        title=f'{fx.get_currency_description(currency_1)} <br >                  vs <br>{fx.get_currency_description(currency_2)} <br>Exchange Rate Trend', markers=True
     )
 
     fig.update_layout(
@@ -134,12 +207,7 @@ if selected == "Exchange Rate Dashboard":
 
     # annotations for highest and lowest rates
     if not resampled_data.empty:
-        exchange_rate_series = resampled_data[currency_1] / resampled_data[currency_2]
-        exchange_rate_series = exchange_rate_series.replace([float('inf'), -float('inf')], float('nan')).dropna()
-
-        highest_rate = exchange_rate_series.max()
-        # print(highest_rate)
-        # print(resampled_data)
+        highest_rate = (resampled_data[currency_1] / resampled_data[currency_2]) .max()
         highest_rate_date = resampled_data[(resampled_data[currency_1] / resampled_data[currency_2]) == highest_rate]['Date'].iloc[0]
         fig.add_annotation(x=highest_rate_date, y=highest_rate,
                            text=f"Highest: {highest_rate}",
@@ -154,13 +222,12 @@ if selected == "Exchange Rate Dashboard":
     st.plotly_chart(fig)
 
     if not resampled_data.empty:
-        st.write(f"**Highest Rate**: {highest_rate} on {highest_rate_date.date()}")
-        st.write(f"**Lowest Rate**: {lowest_rate} on {lowest_rate_date.date()}")
+        st.write(f"Highest Rate: {highest_rate} on {highest_rate_date.date()}")
+        st.write(f"Lowest Rate: {lowest_rate} on {lowest_rate_date.date()}")
 
     null_count_currency_1 = (exchange_rate_data[currency_1] == 0).sum()
     if null_count_currency_1 != 0:
         st.warning(f"Note : There are {null_count_currency_1} null values for {currency_1} which are not printed on the graph")
-
 
 elif selected == "Custom Currency Basket":
     st.title("Custom Currency Basket")
@@ -174,10 +241,15 @@ elif selected == "Custom Currency Basket":
     )
 
     base_currency = st.selectbox("Select Base Currency", exchange_rate_data.columns[1:])
+    st.write("Base Currency: ", fx.get_currency_description(base_currency))
 
     basket_currencies = st.multiselect(
         "Select Currencies for Basket", exchange_rate_data.columns[1:]
     )
+    # Display the description of each selected currency
+    for currency in basket_currencies:
+        description = fx.get_currency_description(currency)
+        st.write(f"{currency}: {description}")
 
     basket_weights = {}
 
