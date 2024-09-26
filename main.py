@@ -4,7 +4,8 @@ import numpy as np
 import plotly.express as px
 from streamlit_option_menu import option_menu
 from components import fx_rate, currencies_page
-from pymongo import MongoClient
+from utils import data_handling
+# from pymongo import MongoClient
 
 def render_footer():
     footer_html = """
@@ -53,24 +54,19 @@ def render_footer():
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
+# MySQL database connection details
+username = 'root'
+password = 'beansbestcat'
+host = 'localhost'
+port = '3307' 
+dbname = 'nt-t8-db'
+table_name = 'historical_data'
 
-client = MongoClient('mongodb://localhost:27017/')
-db = client['exchange_rate_database']
-collections = db.list_collection_names()
+df = data_handling.fetch_table(username, password, host, port, dbname, table_name)
 
-dataframes = []
-
-for collection_name in collections:
-    collection = db[collection_name]
-    fetched_df = pd.DataFrame(list(collection.find()))
-    
-   
-    if '_id' in fetched_df.columns:
-        fetched_df.drop('_id', axis=1, inplace=True)
-
-    dataframes.append(fetched_df)
-
-df = pd.concat(dataframes, ignore_index=True)
+# Display the DataFrame
+# print(df)
+data_handling.get_mean(df, 2012, 'INR')
 
 def calculate_hv(df, currency_col, period):
     df = df[['Date', currency_col]].dropna()
@@ -97,7 +93,7 @@ def modify_data(df):
     df['Date'] = pd.to_datetime(df['Date'], format='%d-%b-%y')
     return df
 
-exchange_rate_data = modify_data(df)
+exchange_rate_data = df
 
 # def resample_data(df, currency_col, frequency):
 #     sumofnulls = df[['Date', currency_col]].isnull().sum()
@@ -256,6 +252,5 @@ elif selected == "Currencies":
 
 elif selected == "FX Rate":
     fx_rate.show_fx_rate()
-
 
 render_footer()
