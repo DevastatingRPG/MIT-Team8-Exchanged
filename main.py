@@ -151,6 +151,7 @@ if selected == "Exchange Rate Dashboard":
     currency_1 = st.selectbox("Select a Currency(to compare):", currencies)
     currency_2 = st.selectbox("Select Base Currency:", currencies)
 
+
     start_date = st.date_input("Start Date", value=exchange_rate_data['Date'].min().date())
     end_date = st.date_input("End Date", value=exchange_rate_data['Date'].max().date())
     filtered_data = exchange_rate_data[(exchange_rate_data['Date'] >= pd.to_datetime(start_date)) & 
@@ -204,7 +205,7 @@ if selected == "Exchange Rate Dashboard":
         st.write(f"**Highest Rate**: {highest_rate} on {highest_rate_date.date()}")
         st.write(f"**Lowest Rate**: {lowest_rate} on {lowest_rate_date.date()}")
 
-    null_count_currency_1 = exchange_rate_data[currency_1].isnull().sum()
+    null_count_currency_1 = (exchange_rate_data[currency_1] == 0).sum()
     if null_count_currency_1 != 0:
         st.warning(f"Note : There are {null_count_currency_1} null values for {currency_1} which are not printed on the graph")
 
