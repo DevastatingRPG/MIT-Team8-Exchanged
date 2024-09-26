@@ -134,7 +134,12 @@ if selected == "Exchange Rate Dashboard":
 
     # annotations for highest and lowest rates
     if not resampled_data.empty:
-        highest_rate = (resampled_data[currency_1] / resampled_data[currency_2]) .max()
+        exchange_rate_series = resampled_data[currency_1] / resampled_data[currency_2]
+        exchange_rate_series = exchange_rate_series.replace([float('inf'), -float('inf')], float('nan')).dropna()
+
+        highest_rate = exchange_rate_series.max()
+        # print(highest_rate)
+        # print(resampled_data)
         highest_rate_date = resampled_data[(resampled_data[currency_1] / resampled_data[currency_2]) == highest_rate]['Date'].iloc[0]
         fig.add_annotation(x=highest_rate_date, y=highest_rate,
                            text=f"Highest: {highest_rate}",
