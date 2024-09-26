@@ -34,12 +34,7 @@ Setup Instructions
     Create a .env file and add your API key for Open Exchange Rates API:
         API_KEY=your_api_key_here
 
-    Docker SQL Pull Command: 
-        docker pull devastatingrpg/nt-mit-team8:latest
-        #Make a container with this image with port 3307 and deploy the container before running the main app
-    
-    IF Docker Not working:
-        use the sql import from the file we have provided and use port 3306 on the code connection instead
+    User Data import option and import 'nt.mysql' file before running the application
 
     Run the application:
         streamlit run main.py 
