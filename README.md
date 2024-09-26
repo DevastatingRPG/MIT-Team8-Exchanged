@@ -37,6 +37,12 @@ Setup Instructions
     Docker SQL Pull Command: 
         docker pull devastatingrpg/nt-mit-team8:latest
         #Make a container with this image with port 3307 and deploy the container before running the main app
+    
+    IF Docker Not working:
+        use the sql import from the file we have provided and use port 3306 on the code connection instead
 
     Run the application:
         streamlit run main.py 
+
+    For automated Integration:
+        instead of fetch_table command in main.py if we use fetch_latest_fx_db instead
