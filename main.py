@@ -290,7 +290,8 @@ elif selected == "Risk Factor":
 
     currencies = exchange_rate_data.columns[1:]  # Get all available currencies
     currency_selected = st.selectbox("Select a Currency for HV Calculation:", currencies)
-
+    st.write("Selected Currency: ", fx.get_currency_description(currency_selected))
+    
     year_selected = st.selectbox("Select Year for Volatility Analysis:", exchange_rate_data['Date'].dt.year.unique())
 
     filtered_data = exchange_rate_data[exchange_rate_data['Date'].dt.year == year_selected]
