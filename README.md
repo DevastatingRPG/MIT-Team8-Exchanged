@@ -32,7 +32,7 @@ Setup Instructions
         requests
 
     Create a .env file and add your API key for Open Exchange Rates API:
-        API_KEY=your_api_key_here
+        API_KEY=2fbd225cbccb4d96a22e643903910c84
 
     User Data import option and import 'nt.mysql' file before running the application
 
