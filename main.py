@@ -8,8 +8,13 @@ from utils import data_handling, fx
 import schedule
 import time
 import threading
+from datetime import date, datetime
+import re
+import polars as pl
+from dotenv import load_dotenv
+import os
+import requests
 
-# MySQL database connection details
 username = 'root'
 password = 'beansbestcat'
 host = 'localhost'
@@ -17,39 +22,56 @@ port = '3307'
 dbname = 'nt-t8-db'
 table_name = 'historical_data'
 df = data_handling.fetch_table(username, password, host, port, dbname, table_name)
-# print(df)
-# schedule.every().day.at("00:00").do(data_handling.fetch_latest_fx_db)
 
-# def run_schedule():
-#     while True:
-#         schedule.run_pending()
-#         time.sleep(1)
+load_dotenv()
 
-# threading.Thread(target=run_schedule, daemon=True).start()
+api_key = os.getenv("API_KEY")
+base_url = f"https://openexchangerates.org/api"
 
-# Display the DataFrame
-# print(df)
-# data_handling.get_mean(df, 2012, 'INR')
 
-def calculate_hv(df, currency_col, period):
+def fetchData(url):
+    headers = {"accept": "application/json"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()
+
+
+def get_fx_rates(base_currency="USD", date=None):
+    today_date = datetime.today().strftime("%Y-%m-%d")
+
+    if date == today_date or date == None:
+        url = base_url + f"/latest.json?app_id={api_key}"
+    else:
+        url = base_url + f"/historical/{date}.json?app_id={api_key}"
+    rates = fetchData(url)["rates"]
+    rates_df = pl.DataFrame(
+        {"Currency": list(rates.keys()), "Rate": list(rates.values())}
+    )
+    return rates_df
+
+def extract_currency_abbreviation(column_name):
+    match = re.search(r"\((.*?)\)", column_name)
+    if match:
+        return match.group(1)
+    return column_name
+
+def calculate_hv(df, currency_col, period='monthly'):
     df = df[['Date', currency_col]].dropna()
     df = df.set_index('Date')
 
+    # Calculate returns based on selected period
     if period == 'monthly':
         returns = df[currency_col].resample('M').last().pct_change()
     elif period == 'quarterly':
         returns = df[currency_col].resample('Q').last().pct_change()
-    elif period == 'weekly':
-        returns = df[currency_col].resample('W').last().pct_change()
-    else:
-        returns = pd.DataFrame()
+    elif period == 'yearly':
+        returns = df[currency_col].resample('Y').last().pct_change()
 
-    if returns.empty:
-        return None, pd.DataFrame()
+    returns = returns.dropna()
 
-    # Calculate volatility as the standard deviation of returns
     volatility = returns.std() * np.sqrt(len(returns))
-
     return volatility, returns
 
 def modify_data(df):
@@ -58,11 +80,7 @@ def modify_data(df):
 
 exchange_rate_data = df
 
-# def resample_data(df, currency_col, frequency):
-#     sumofnulls = df[['Date', currency_col]].isnull().sum()
-#     resampled_df = df[['Date', currency_col]].dropna()
-#     resampled_df = resampled_df.resample(frequency, on='Date').mean().reset_index()
-#     return resampled_df,sumofnulls
+
 
 selected = option_menu(
     menu_title=None,
@@ -80,6 +98,7 @@ if selected == "Exchange Rate Dashboard":
     currency_1 = st.selectbox("Select a Currency(to compare):", currencies)
     currency_2 = st.selectbox("Select Base Currency:", currencies)
 
+
     start_date = st.date_input("Start Date", value=exchange_rate_data['Date'].min().date())
     end_date = st.date_input("End Date", value=exchange_rate_data['Date'].max().date())
     filtered_data = exchange_rate_data[(exchange_rate_data['Date'] >= pd.to_datetime(start_date)) & 
@@ -96,13 +115,11 @@ if selected == "Exchange Rate Dashboard":
 
     resampled_data['Currency 1 / Currency 2'] = resampled_data[currency_1] / resampled_data[currency_2]
 
-    # Plotting the detailed chart
     fig = px.line(
         resampled_data, x='Date', y='Currency 1 / Currency 2',
         title=f'{currency_1} <br >                  vs <br>{currency_2} <br>Exchange Rate Trend', markers=True
     )
 
-    # Customize layout
     fig.update_layout(
         xaxis_title='Date',
         yaxis_title=f'{currency_1} <br>in terms of {currency_2}',
@@ -115,7 +132,7 @@ if selected == "Exchange Rate Dashboard":
         hovermode='x unified',  # Unified hover effect
     )
 
-    # Add annotations for highest and lowest rates
+    # annotations for highest and lowest rates
     if not resampled_data.empty:
         highest_rate = (resampled_data[currency_1] / resampled_data[currency_2]) .max()
         highest_rate_date = resampled_data[(resampled_data[currency_1] / resampled_data[currency_2]) == highest_rate]['Date'].iloc[0]
@@ -135,25 +152,39 @@ if selected == "Exchange Rate Dashboard":
         st.write(f"**Highest Rate**: {highest_rate} on {highest_rate_date.date()}")
         st.write(f"**Lowest Rate**: {lowest_rate} on {lowest_rate_date.date()}")
 
+    null_count_currency_1 = (exchange_rate_data[currency_1] == 0).sum()
+    if null_count_currency_1 != 0:
+        st.warning(f"Note : There are {null_count_currency_1} null values for {currency_1} which are not printed on the graph")
+
+
 elif selected == "Custom Currency Basket":
     st.title("Custom Currency Basket")
 
-
-    basket_size = st.number_input("Enter Basket Size:", min_value=1, max_value=1000, value=100, step=1)
+    year = st.number_input(
+        "Enter year: ", min_value=2000, max_value=2024, step=1, value=2024
+    )
+    date = date(year, 1, 1)
+    basket_size = st.number_input(
+        "Enter Basket Size:", min_value=1, max_value=1000, value=100, step=1
+    )
 
     base_currency = st.selectbox("Select Base Currency", exchange_rate_data.columns[1:])
 
-    basket_currencies = st.multiselect("Select Currencies for Basket", exchange_rate_data.columns[1:])
-    
+    basket_currencies = st.multiselect(
+        "Select Currencies for Basket", exchange_rate_data.columns[1:]
+    )
+
     basket_weights = {}
-    
+
     for currency in basket_currencies:
-        basket_weights[currency] = st.slider(f"Weight of {currency}:", 0, 100, 50)
+        basket_weights[currency] = st.slider(f"Weight of {currency}:", 0, 100, 100)
 
     total_weight = sum(basket_weights.values())
 
     if total_weight > 100:
         st.error("Total weight exceeds 100%. Please adjust the weights.")
+    elif total_weight < 100:
+        st.error("Total weight does not add up to 100%. Please adjust the weights.")
     else:
         st.success(f"Total weight: {total_weight}%")
         st.success(f"Total Basket Size: {basket_size}")
@@ -165,6 +196,17 @@ elif selected == "Custom Currency Basket":
 
         st.write(f"Base Currency for the basket: {base_currency}")
 
+        rates = get_fx_rates(base_currency, date)
+        rates = rates.to_pandas()
+        total_value = 0.0
+        for currency, weight in basket_weights.items():
+            abbr = extract_currency_abbreviation(currency)
+            value = rates.loc[rates["Currency"] == abbr, "Rate"]
+            value = value.iloc[0]
+            weight = (weight / 100) * basket_size
+            total_value += weight * value
+        st.write(f"Value in base currency: {total_value}")
+
 
 elif selected == "Risk Factor":
     st.title("Risk Factor Analysis - Historic Volatility")
@@ -172,39 +214,50 @@ elif selected == "Risk Factor":
     currencies = exchange_rate_data.columns[1:]  # Get all available currencies
     currency_selected = st.selectbox("Select a Currency for HV Calculation:", currencies)
 
-    date_selections = []
-    year_selected = st.selectbox("Select Year for Volatility Analysis:", sorted(exchange_rate_data['Date'].dt.year.unique()))
+    year_selected = st.selectbox("Select Year for Volatility Analysis:", exchange_rate_data['Date'].dt.year.unique())
 
     filtered_data = exchange_rate_data[exchange_rate_data['Date'].dt.year == year_selected]
 
-    period_selected = st.selectbox("Select the Period:", ["monthly", "quarterly", "weekly"])
+    period_selected = st.selectbox("Select the Period:", ["monthly", "quarterly", "yearly"])
 
     # Calculating HV
-    hv, returns = calculate_hv(filtered_data, currency_selected, period_selected)
+    hv, returns = calculate_hv(filtered_data, currency_selected, period=period_selected)
 
     if hv is None or returns.empty:
-        st.write(f"No sufficient data to calculate historical volatility for {currency_selected} in {year_selected}.")
+        st.write(f"Data is missing or insufficient to calculate historical volatility for {currency_selected} in {year_selected}.")
     else:
-        st.write(f"**Annualized Historical Volatility** for {currency_selected} in {year_selected} is: {hv:.2%}")
+        if hv < 0.10:
+            volatility_level = "Low Risk"
+            line_color = "green"
+        elif 0.10 <= hv < 0.20:
+            volatility_level = "Medium Risk"
+            line_color = "orange"
+        else:
+            volatility_level = "High Risk"
+            line_color = "red"
 
-        # Plot returns only if available
+        st.write(f"**Risk Level** for {currency_selected} in {year_selected} is: {volatility_level}")
+
         if not returns.empty:
+            # Create the figure with the line color set based on volatility
             fig = px.line(
                 x=returns.index,
                 y=returns.values,
-                title=f'Returns for {currency_selected} <br>            ({period_selected.capitalize()} data) in {year_selected}',
+                title=f'Returns for {currency_selected} ({period_selected.capitalize()} data) in {year_selected}',
                 labels={'x': 'Date', 'y': 'Returns'},
                 markers=True
             )
 
+            fig.update_traces(line=dict(color=line_color))
+
             fig.update_layout(
                 xaxis_title='Date',
                 yaxis_title='Returns',
-                title_x=0.5,  # Center the title
+                title_x=0.5,
                 showlegend=False,
-                xaxis=dict(showgrid=True),  # Show gridlines on x-axis
-                yaxis=dict(showgrid=True),  # Show gridlines on y-axis
-                hovermode='x unified',  # Unified hover effect
+                xaxis=dict(showgrid=True),
+                yaxis=dict(showgrid=True),
+                hovermode='x unified',
             )
 
             st.plotly_chart(fig)
