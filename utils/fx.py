@@ -46,11 +46,13 @@ def get_currencies_list():
 def get_currencies_fx():
     url = base_url + '/currencies.json'
     currencies = fetchData(url)
-    rates_df = get_fx_rates()
-    rates_df = rates_df.with_columns(
-        pl.col("Currency").map_elements(lambda x: currencies.get(x, "N/A"), return_dtype=pl.String).alias("Description")
-    )
-    rates_df = rates_df.select(["Currency", "Description", "Rate"])
+    rates_df, _ = get_fx_rates()
+    
+    # Add the Description column by mapping the Currency column to the currencies dictionary
+    rates_df['Description'] = rates_df['Currency'].map(currencies).fillna('N/A')
+    
+    # Select only the required columns
+    rates_df = rates_df[['Currency', 'Description', 'Rate']]
     
     return rates_df
 
