@@ -31,7 +31,7 @@ Setup Instructions
         plotly
         requests
 
-    Create a .env file and add your API key:
+    Create a .env file and add your API key for Open Exchange Rates API:
         API_KEY=your_api_key_here
 
     Docker SQL Pull Command: 
