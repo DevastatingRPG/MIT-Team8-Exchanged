@@ -273,15 +273,38 @@ elif selected == "Custom Currency Basket":
 
         st.write(f"Base Currency for the basket: {base_currency}")
 
-        rates = get_fx_rates(base_currency, date)
-        rates = rates.to_pandas()
-        total_value = 0.0
-        for currency, weight in basket_weights.items():
-            abbr = extract_currency_abbreviation(currency)
-            value = rates.loc[rates["Currency"] == abbr, "Rate"]
-            value = value.iloc[0]
-            weight = (weight / 100) * basket_size
-            total_value += weight * value
+        # rates = get_fx_rates(base_currency, date)
+        # rates = rates.to_pandas()
+        # total_value = 0.0
+        # for currency, weight in basket_weights.items():
+        #     abbr = extract_currency_abbreviation(currency)
+        #     value = rates.loc[rates["Currency"] == abbr, "Rate"]
+        #     value = value.iloc[0]
+        #     weight = (weight / 100) * basket_size
+        #     total_value += weight * value
+
+
+        if year == datetime.now().year:
+            rates = get_fx_rates(base_currency, date)
+            rates = rates.to_pandas()
+            total_value = 0.0
+            for currency, weight in basket_weights.items():
+                abbr = extract_currency_abbreviation(currency)
+                value = rates.loc[rates["Currency"] == abbr, "Rate"]
+                value = value.iloc[0]
+                weight = (weight / 100) * basket_size
+                total_value += weight * value
+
+        else:
+            rates_dict = data_handling.get_mean(df, year, base_currency)
+            total_value = 0.0
+            for currency, weight in basket_weights.items():
+                abbr = extract_currency_abbreviation(currency)
+                if abbr in rates_dict.keys():
+                    value = rates_dict[abbr]
+                    weight = (weight / 100) * basket_size
+                    total_value += weight * value
+
         st.write(f"Value in base currency: {total_value}")
 
 
@@ -291,7 +314,7 @@ elif selected == "Risk Factor":
     currencies = exchange_rate_data.columns[1:]  # Get all available currencies
     currency_selected = st.selectbox("Select a Currency for HV Calculation:", currencies)
     st.write("Selected Currency: ", fx.get_currency_description(currency_selected))
-    
+
     year_selected = st.selectbox("Select Year for Volatility Analysis:", exchange_rate_data['Date'].dt.year.unique())
 
     filtered_data = exchange_rate_data[exchange_rate_data['Date'].dt.year == year_selected]
