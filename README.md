@@ -24,7 +24,12 @@ Setup Instructions
             source env/bin/activate (On Windows use env\Scripts\activate)
 
     Install required packages:
-        pip install -r requirements.txt
+        pip install the following
+        dash
+        dash-bootstrap-components
+        pandas
+        plotly
+        requests
 
     Create a .env file and add your API key:
         API_KEY=your_api_key_here
