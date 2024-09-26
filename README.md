@@ -1,8 +1,8 @@
 # NorthernProject
 
-#Currency Exchange Rate Dashboard Project Description
+Currency Exchange Rate Dashboard Project Description
 
-#This project is a dashboard for analyzing currency exchange rates using Python and Plotly Dash. It allows users to select time periods, display trends, and manage custom currency baskets. The dashboard can visualize historical data, making it easier to understand currency fluctuations over time.
+This project is a dashboard for analyzing currency exchange rates using Python and Plotly Dash. It allows users to select time periods, display trends, and manage custom currency baskets. The dashboard can visualize historical data, making it easier to understand currency fluctuations over time.
 #Features:
 
     Data Visualization: View exchange rates in weekly, monthly, quarterly, and annual charts.
@@ -12,7 +12,7 @@
     Information on Currency: View all currencies along with a short code, description, and current exchange rate against USD.
     Automated: Database is automatically updated with exchange rates.
 
-#Setup Instructions
+Setup Instructions
 
     Clone the repository:
         git clone <repository-url>
@@ -29,5 +29,9 @@
     Create a .env file and add your API key:
         API_KEY=your_api_key_here
 
+    Docker SQL Pull Command: 
+        docker pull devastatingrpg/nt-mit-team8:latest
+        #Make a container with this image with port 3307 and deploy the container before running the main app
+
     Run the application:
-        streamlit run app.py 
+        streamlit run main.py 
