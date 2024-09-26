@@ -19,6 +19,7 @@ def fetch_table(username: str, password: str, host: str, port: str, dbname: str,
     pd.DataFrame: The table data as a pandas DataFrame.
     """
     connection_string = f'mysql+pymysql://{username}:{password}@{host}:{port}/{dbname}'
+
     engine = create_engine(connection_string)
     df = pd.read_sql_table(table_name, con=engine)
     return df

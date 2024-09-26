@@ -16,21 +16,20 @@ host = 'localhost'
 port = '3307' 
 dbname = 'nt-t8-db'
 table_name = 'historical_data'
+df = data_handling.fetch_table(username, password, host, port, dbname, table_name)
+# print(df)
+# schedule.every().day.at("00:00").do(data_handling.fetch_latest_fx_db)
 
-df = data_handling.fetch_latest_fx_db(username, password, host, port, dbname, table_name)
-print(df)
-schedule.every().day.at("00:00").do(data_handling.fetch_latest_fx_db)
+# def run_schedule():
+#     while True:
+#         schedule.run_pending()
+#         time.sleep(1)
 
-def run_schedule():
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
-threading.Thread(target=run_schedule, daemon=True).start()
+# threading.Thread(target=run_schedule, daemon=True).start()
 
 # Display the DataFrame
 # print(df)
-data_handling.get_mean(df, 2012, 'INR')
+# data_handling.get_mean(df, 2012, 'INR')
 
 def calculate_hv(df, currency_col, period):
     df = df[['Date', currency_col]].dropna()
