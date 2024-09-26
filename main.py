@@ -3,56 +3,11 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 from streamlit_option_menu import option_menu
-from components import fx_rate, currencies_page
-from utils import data_handling
-# from pymongo import MongoClient
-
-def render_footer():
-    footer_html = """
-    <style>
-    .footer {
-        position: relative;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: #2C3E50; /* Darker background color */
-        color: #ECF0F1; /* Light text color */
-        text-align: center;
-        padding: 20px 10px; /* Increased padding */
-        font-size: 18px; /* Larger font size */
-        font-family: 'Verdana', sans-serif; /* Different font */
-        z-index: 1000;
-    }
-    .footer p {
-        margin: 0;
-    }
-    .footer a {
-        color: #ECF0F1; /* Consistent link color */
-        text-decoration: none;
-        margin: 0 15px; /* More space between links */
-    }
-    .footer a:hover {
-        text-decoration: underline; /* Underline on hover */
-        color: #3498DB; /* Change color on hover */
-    }
-    .footer-icons {
-        margin-top: 15px; /* Increased spacing above icons */
-    }
-    .footer-icons img {
-        width: 30px; /* Larger icon size */
-        height: 30px; /* Larger icon size */
-        margin: 0 10px; /* More space between icons */
-        transition: transform 0.2s; /* Smooth scale on hover */
-    }
-    .footer-icons img:hover {
-        transform: scale(1.1); /* Scale effect on hover */
-    }
-    </style>
-    <div class="footer">
-        <p>© 2024 Developed by Team 8</p>
-    </div>
-    """
-    st.markdown(footer_html, unsafe_allow_html=True)
+from components import fx_rate, currencies_page, footer
+from utils import data_handling, fx
+import schedule
+import time
+import threading
 
 # MySQL database connection details
 username = 'root'
@@ -62,7 +17,16 @@ port = '3307'
 dbname = 'nt-t8-db'
 table_name = 'historical_data'
 
-df = data_handling.fetch_table(username, password, host, port, dbname, table_name)
+df = data_handling.fetch_latest_fx_db(username, password, host, port, dbname, table_name)
+print(df)
+schedule.every().day.at("00:00").do(data_handling.fetch_latest_fx_db)
+
+def run_schedule():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+threading.Thread(target=run_schedule, daemon=True).start()
 
 # Display the DataFrame
 # print(df)
@@ -108,6 +72,7 @@ selected = option_menu(
     default_index=0,
     orientation="horizontal",
 )
+
 
 if selected == "Exchange Rate Dashboard":
     st.title("Currency Exchange Rate Dashboard")
@@ -170,7 +135,6 @@ if selected == "Exchange Rate Dashboard":
     if not resampled_data.empty:
         st.write(f"**Highest Rate**: {highest_rate} on {highest_rate_date.date()}")
         st.write(f"**Lowest Rate**: {lowest_rate} on {lowest_rate_date.date()}")
-
 
 elif selected == "Custom Currency Basket":
     st.title("Custom Currency Basket")
@@ -247,10 +211,10 @@ elif selected == "Risk Factor":
             st.plotly_chart(fig)
 
 
-elif selected == "Currencies":
+elif selected == "Currencies Lister":
     currencies_page.show_currencies()
 
-elif selected == "FX Rate":
+elif selected == "FX Rate Monitor":
     fx_rate.show_fx_rate()
 
-render_footer()
+footer.render_footer()

@@ -30,7 +30,7 @@ def fetch_and_display_rates(base_currency: str, selected_date: datetime.date):
         base_currency (str): The base currency for the exchange rates.
         selected_date (datetime.date): The date for which to fetch the exchange rates.
     """
-    rates = fx.get_fx_rates(base_currency=base_currency, date=selected_date.strftime('%Y-%m-%d'))
+    rates, _ = fx.get_fx_rates(base_currency=base_currency, date=selected_date.strftime('%Y-%m-%d'))
     st.dataframe(rates, use_container_width=True)
 
     fig = px.bar(rates, x='Rate', y='Currency', title=f'Currency Exchange Rates (Base: {base_currency})', labels={'Rate': 'Exchange Rate'}, height=800)
@@ -56,6 +56,6 @@ def show_fx_rate():
     st.title("FX Rate")
 
     base_currency, selected_date = get_user_inputs()
-
     if st.button("Fetch Rates"):
         fetch_and_display_rates(base_currency, selected_date)
+

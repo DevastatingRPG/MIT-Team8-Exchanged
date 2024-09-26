@@ -1,6 +1,7 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from typing import Dict
+from utils import fx
 
 def fetch_table(username: str, password: str, host: str, port: str, dbname: str, table_name: str) -> pd.DataFrame:
     """
@@ -53,3 +54,35 @@ def get_mean(df: pd.DataFrame, year: int, base_currency: str = 'USD') -> Dict[st
     mean_exchange_rates[base_currency] = 1.0
     
     return mean_exchange_rates.to_dict()
+
+def fetch_latest_fx_db(username: str, password: str, host: str, port: str, dbname: str, table_name: str):
+    """
+    Updates the MySQL database with the latest FX rates if the current date is not present.
+
+    Parameters:
+    username (str): The username for the MySQL database.
+    password (str): The password for the MySQL database.
+    host (str): The host address of the MySQL database.
+    port (str): The port number of the MySQL database.
+    dbname (str): The name of the database.
+    table_name (str): The name of the table to update.
+    base_currency (str): The base currency code to which all exchange rates should be converted. Default is 'USD'.
+    """
+    # Fetch the table from the MySQL database
+    df = fetch_table(username, password, host, port, dbname, table_name)
+    
+    # Update the DataFrame with the latest FX rates if the current date is not present
+    updated_df = fx.update_df_with_latest_fx(df)
+    updated_df = pd.concat([df, updated_df], ignore_index=True)
+    
+    # Create a connection string
+    connection_string = f'mysql+pymysql://{username}:{password}@{host}:{port}/{dbname}'
+    
+    # Create a SQLAlchemy engine
+    engine = create_engine(connection_string)
+    
+    # Write the updated DataFrame back to the MySQL table
+    updated_df.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
+
+    return updated_df
+
