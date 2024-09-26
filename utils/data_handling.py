@@ -82,7 +82,7 @@ def fetch_latest_fx_db(username: str, password: str, host: str, port: str, dbnam
     engine = create_engine(connection_string)
     
     # Write the updated DataFrame back to the MySQL table
-    updated_df.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
+    updated_df.to_sql(name=table_name, con=engine, if_exists='append', index=False)
 
     return updated_df
 
